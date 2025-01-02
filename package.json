@@ -1,0 +1,28 @@
+{
+  "name": "travel-ai-agent",
+  "version": "1.0.0",
+  "description": "A TypeScript web app that integrates Google Gemini (Vertex AI) and Google Maps APIs to provide travel recommendations.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "keywords": [],
+  "author": "Yudi",
+  "license": "MIT",
+  "dependencies": {
+    "@google-cloud/aiplatform": "latest",
+    "@googlemaps/google-maps-services-js": "latest",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "typescript": "latest"
+  }
+}
