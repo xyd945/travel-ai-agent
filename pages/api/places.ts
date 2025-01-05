@@ -61,5 +61,13 @@ export default async function handler(
 
     // 7. Return the first candidate (or the entire array, if you prefer)
     const place = data.candidates[0];
-    console.log('[places.ts] Found place:', place.name);
-    re
+        console.log('[places.ts] Found place:', place.name);
+    
+        // 8. Send the response
+        return res.status(200).json({ place });
+      } catch (error) {
+        console.error('[places.ts] Unexpected error:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+    }
+    
