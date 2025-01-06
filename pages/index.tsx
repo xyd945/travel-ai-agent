@@ -108,7 +108,7 @@ export default function Home() {
                                 )}
                                 {place.photos && place.photos.length > 0 && (
                                     <img
-                                        src={`https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${place.photos[0].photo_reference}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`}
+                                        src={`https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${place.photos[0].photo_reference}&key=${process.env.GOOGLE_MAPS_API_KEY}`}
                                         alt={`Photo of ${place.name}`}
                                     />
                                 )}
