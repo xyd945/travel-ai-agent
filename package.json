@@ -15,6 +15,7 @@
   "dependencies": {
     "@google-cloud/aiplatform": "latest",
     "@googlemaps/google-maps-services-js": "latest",
+    "@react-google-maps/api": "latest",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest"
