@@ -10,50 +10,34 @@ export default async function handler(
     }
 
     try {
-        const { name, city, country_code } = req.body;
+        const { city, country_code } = req.body;
 
-        // Normalize strings for comparison
-        const normalizeString = (str: string) => {
-            return str
-                .toLowerCase()
-                .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '')  // Remove diacritics
-                .replace(/[^a-z0-9\s]/g, '')      // Remove special characters
-                .trim();
-        };
+        if (!city) {
+            return res.status(400).json({ error: 'City parameter is required' });
+        }
 
         const client = await clientPromise;
         const db = client.db("mobifi");
         
-        // Create text index on region.name if it doesn't exist
-        await db.collection("ratehawk_hotel_dump").createIndex({ "region.name": "text" });
-        
-        // Build the query
+        console.log('Searching for city:', city);
+
+        // Query using the region.name field with collation
         const query: any = {
             "region.type": "City",
+            "region.name": city
         };
 
         if (country_code) {
             query["region.country_code"] = country_code.toUpperCase();
         }
 
-        if (city) {
-            const normalizedCity = normalizeString(city);
-            query.$or = [
-                { "region.name": { $regex: new RegExp(normalizedCity, 'i') } },
-                { "region.name": { $regex: new RegExp(normalizedCity.replace(/\s+/g, ''), 'i') } }
-            ];
-        }
-
-        if (name) {
-            const normalizedName = normalizeString(name);
-            query.name = { $regex: new RegExp(normalizedName, 'i') };
-        }
-
         const hotels = await db.collection("ratehawk_hotel_dump")
             .find(query)
+            .collation({ locale: 'en', strength: 2 })  // Case-insensitive matching using collation
             .limit(10)
             .toArray();
+
+        console.log(`Found ${hotels.length} hotels in ${city}`);
 
         res.status(200).json({
             success: true,

@@ -53,6 +53,19 @@ interface HighlightedPlace {
     details: PlaceDetails;
 }
 
+interface AIResponse {
+    location: string;
+    placesOfInterest: PlaceItem[];
+}
+
+interface PlaceItem {
+    name: string;
+    description: string;
+    type: string;
+    priceRange?: string;
+    experience?: string;
+}
+
 // Map component
 const MapContainer: React.FC<MapContainerProps> = ({ 
     center, 
@@ -208,6 +221,7 @@ interface PlaceItem {
     type: string;
     priceRange?: string;
     experience?: string;
+    location?: string; // This will come from AI response's location field
 }
 
 interface ChatMessage {
@@ -246,61 +260,53 @@ export default function Home() {
     }, []);
 
     const handlePlaceClick = async (place: PlaceItem, matchedPlace: any) => {
-        if (matchedPlace) {
-            // First set the map markers as before
-            setHighlightedPlace({
-                location: {
-                    lat: matchedPlace.geometry.location.lat,
-                    lng: matchedPlace.geometry.location.lng
-                },
-                details: matchedPlace
-            });
-            setMapCenter({
-                lat: matchedPlace.geometry.location.lat,
-                lng: matchedPlace.geometry.location.lng
-            });
-
-            // Check if it's a hotel/lodging
-            if (matchedPlace.types?.includes('lodging')) {
-                try {
-                    console.log('Fetching hotel data for:', matchedPlace);
-                    const response = await fetch('/api/hotels', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            name: matchedPlace.name,
-                            city: matchedPlace.address_components?.find((c: any) => 
-                                c.types.includes('locality'))?.long_name,
-                            country_code: matchedPlace.address_components?.find((c: any) => 
-                                c.types.includes('country'))?.short_name
-                        })
-                    });
-
-                    const data = await response.json();
-                    console.log('MongoDB hotel data:', data);
-                    
-                    if (data.success && data.hotels.length > 0) {
-                        const hotelData = {
-                            googleHotel: {
-                                ...matchedPlace,
-                                apiKey: mapsApiKey // Make sure to include the API key for photos
-                            },
-                            mongoHotel: data.hotels[0]
-                        };
-
-                        // Open in new tab
-                        window.open(
-                            `/hotel-comparison?hotelData=${encodeURIComponent(JSON.stringify(hotelData))}`,
-                            '_blank'
-                        );
-                    } else {
-                        console.log('No matching hotels found in MongoDB');
-                    }
-                } catch (error) {
-                    console.error('Error fetching hotel data:', error);
+        if (matchedPlace && matchedPlace.types?.includes('lodging')) {
+            try {
+                // Get the AI response directly from aiResponse state
+                if (!aiResponse?.location) {
+                    console.error('No location found in AI response');
+                    return;
                 }
+
+                // Extract city from location (e.g., "Paris, France" -> "Paris")
+                const city = aiResponse.location.split(',')[0].trim();
+                
+                console.log('Using city:', city);
+                
+                const response = await fetch('/api/hotels', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        city: city,
+                        country_code: matchedPlace.address_components?.find((c: any) => 
+                            c.types.includes('country'))?.short_name || ''
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success && data.hotels.length > 0) {
+                    const hotelData = {
+                        googleHotel: {
+                            ...matchedPlace,
+                            apiKey: mapsApiKey
+                        },
+                        mongoHotel: data.hotels[0]
+                    };
+
+                    window.open(
+                        `/hotel-comparison?hotelData=${encodeURIComponent(JSON.stringify(hotelData))}`,
+                        '_blank'
+                    );
+                } else {
+                    console.log(`No hotels found in MongoDB for city: ${city}`);
+                }
+
+            } catch (error) {
+                console.error('Error processing hotel data:', error);
+                console.log('AI Response:', aiResponse);
             }
         }
     };
