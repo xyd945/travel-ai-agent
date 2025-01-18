@@ -18,7 +18,8 @@
     "@react-google-maps/api": "latest",
     "next": "latest",
     "react": "latest",
-    "react-dom": "latest"
+    "react-dom": "latest",
+    "mongodb": "^6.3.0"
   },
   "devDependencies": {
     "@types/node": "latest",
