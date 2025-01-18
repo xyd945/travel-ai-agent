@@ -245,9 +245,9 @@ export default function Home() {
         fetchMapsKey();
     }, []);
 
-    const handlePlaceClick = (place: PlaceItem) => {
-        const matchedPlace = places.find(p => p.name === place.name);
+    const handlePlaceClick = async (place: PlaceItem, matchedPlace: any) => {
         if (matchedPlace) {
+            // First set the map markers as before
             setHighlightedPlace({
                 location: {
                     lat: matchedPlace.geometry.location.lat,
@@ -259,6 +259,49 @@ export default function Home() {
                 lat: matchedPlace.geometry.location.lat,
                 lng: matchedPlace.geometry.location.lng
             });
+
+            // Check if it's a hotel/lodging
+            if (matchedPlace.types?.includes('lodging')) {
+                try {
+                    console.log('Fetching hotel data for:', matchedPlace);
+                    const response = await fetch('/api/hotels', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            name: matchedPlace.name,
+                            city: matchedPlace.address_components?.find((c: any) => 
+                                c.types.includes('locality'))?.long_name,
+                            country_code: matchedPlace.address_components?.find((c: any) => 
+                                c.types.includes('country'))?.short_name
+                        })
+                    });
+
+                    const data = await response.json();
+                    console.log('MongoDB hotel data:', data);
+                    
+                    if (data.success && data.hotels.length > 0) {
+                        const hotelData = {
+                            googleHotel: {
+                                ...matchedPlace,
+                                apiKey: mapsApiKey // Make sure to include the API key for photos
+                            },
+                            mongoHotel: data.hotels[0]
+                        };
+
+                        // Open in new tab
+                        window.open(
+                            `/hotel-comparison?hotelData=${encodeURIComponent(JSON.stringify(hotelData))}`,
+                            '_blank'
+                        );
+                    } else {
+                        console.log('No matching hotels found in MongoDB');
+                    }
+                } catch (error) {
+                    console.error('Error fetching hotel data:', error);
+                }
+            }
         }
     };
 
@@ -500,21 +543,7 @@ export default function Home() {
                                         return (
                                             <div 
                                                 key={index}
-                                                onClick={() => {
-                                                    if (matchedPlace) {
-                                                        setHighlightedPlace({
-                                                            location: {
-                                                                lat: matchedPlace.geometry.location.lat,
-                                                                lng: matchedPlace.geometry.location.lng
-                                                            },
-                                                            details: matchedPlace
-                                                        });
-                                                        setMapCenter({
-                                                            lat: matchedPlace.geometry.location.lat,
-                                                            lng: matchedPlace.geometry.location.lng
-                                                        });
-                                                    }
-                                                }}
+                                                onClick={() => handlePlaceClick(place, matchedPlace)}
                                                 style={{
                                                     marginBottom: index < msg.content.length - 1 ? '12px' : 0,
                                                     padding: '16px',
